@@ -1,7 +1,7 @@
 [submodule "libuv"]
 	path = deps/libuv
-	url = https://github.com/libuv/libuv.git
-	branch = v1.x
+	url = https://github.com/luvitred/libuv.git
+	branch = v1.44.2
 [submodule "luajit"]
 	path = deps/luajit
 	url = https://github.com/LuaJIT/LuaJIT.git
