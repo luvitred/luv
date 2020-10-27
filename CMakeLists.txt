@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.5)
 
 project (luv C ASM)
 
+include(GNUInstallDirs)
+
 set(LUV_VERSION_MAJOR 1)
 set(LUV_VERSION_MINOR 48)
 set(LUV_VERSION_PATCH 0)
@@ -255,7 +257,7 @@ foreach(TARGET_NAME ${ACTIVE_TARGETS})
       endif (USE_LUAJIT)
     endif (LUA)
   elseif("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
-    target_link_libraries(${TARGET_NAME} ${LIBUV_LIBRARIES} rt)
+    target_link_libraries(${TARGET_NAME} ${LIBUV_LIBRARIES} rt m)
   else()
     target_link_libraries(${TARGET_NAME} ${LIBUV_LIBRARIES})
   endif()
@@ -264,19 +266,19 @@ endforeach()
 if (NOT LUA)
   if (BUILD_MODULE)
     if (WIN32)
-      set(MODULE_INSTALL_LIB_DIR "${CMAKE_INSTALL_PREFIX}/lib")
+      set(MODULE_INSTALL_LIB_DIR "${CMAKE_INSTALL_LIBDIR}")
     else (WIN32)
-      set(MODULE_INSTALL_LIB_DIR "${CMAKE_INSTALL_PREFIX}/lib/lua/${LUA_VERSION_MAJOR}.${LUA_VERSION_MINOR}")
+      set(MODULE_INSTALL_LIB_DIR "${CMAKE_INSTALL_LIBDIR}/lua/${LUA_VERSION_MAJOR}.${LUA_VERSION_MINOR}")
     endif (WIN32)
   endif (BUILD_MODULE)
   if (BUILD_STATIC_LIBS)
-    set(STATICLIBS_INSTALL_LIB_DIR "${CMAKE_INSTALL_PREFIX}/lib"
+    set(STATICLIBS_INSTALL_LIB_DIR "${CMAKE_INSTALL_LIBDIR}"
       CACHE PATH "Installation directory for static libraries")
   endif (BUILD_STATIC_LIBS)
   if (BUILD_SHARED_LIBS)
     set(SHAREDLIBS_INSTALL_BIN_DIR "${CMAKE_INSTALL_PREFIX}/bin"
       CACHE PATH "Installation directory for runtime components")
-    set(SHAREDLIBS_INSTALL_LIB_DIR "${CMAKE_INSTALL_PREFIX}/lib"
+    set(SHAREDLIBS_INSTALL_LIB_DIR "${CMAKE_INSTALL_LIBDIR}"
       CACHE PATH "Installation directory for shared libraries")
   endif (BUILD_SHARED_LIBS)
 else ()
@@ -288,11 +290,11 @@ endif ()
 
 # header install paths are LuaRocks-agnostic, so just use CMAKE_INSTALL_PREFIX regardless
 if (BUILD_STATIC_LIBS)
-  set(STATICLIBS_INSTALL_INC_DIR "${CMAKE_INSTALL_PREFIX}/include/luv"
+  set(STATICLIBS_INSTALL_INC_DIR "${CMAKE_INSTALL_INCLUDEDIR}/luv"
     CACHE PATH "Installation directory for headers")
 endif (BUILD_STATIC_LIBS)
 if (BUILD_SHARED_LIBS)
-  set(SHAREDLIBS_INSTALL_INC_DIR "${CMAKE_INSTALL_PREFIX}/include/luv"
+  set(SHAREDLIBS_INSTALL_INC_DIR "${CMAKE_INSTALL_INCLUDEDIR}/luv"
     CACHE PATH "Installation directory for headers")
 endif (BUILD_SHARED_LIBS)
 
@@ -333,3 +335,13 @@ if (CMAKE_INSTALL_PREFIX)
     )
   endif (BUILD_SHARED_LIBS)
 endif (CMAKE_INSTALL_PREFIX)
+
+message(STATUS "summary of build options:
+  Install prefix:  ${CMAKE_INSTALL_PREFIX}
+  Target system:   ${CMAKE_SYSTEM_NAME}
+  STATICLIBS_DIR:  ${STATICLIBS_INSTALL_LIB_DIR}
+  SHAREDLIBS_DIR:  ${SHAREDLIBS_INSTALL_LIB_DIR}
+  Compiler:
+    C compiler:    ${CMAKE_C_COMPILER}
+    CFLAGS:        ${CMAKE_C_FLAGS_${_build_type}} ${CMAKE_C_FLAGS}
+")
