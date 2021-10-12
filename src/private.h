@@ -6,11 +6,11 @@
 #include "compat-5.3.h"
 #endif
 
-#include "luv.h"
-#include "util.h"
 #include "lhandle.h"
 #include "lreq.h"
 #include "lthreadpool.h"
+#include "luv.h"
+#include "util.h"
 
 #if defined(__clang__)
 #pragma clang diagnostic push
@@ -82,6 +82,8 @@ static int luv_sock_string_to_num(const char* string);
 static const char* luv_sock_num_to_string(const int num);
 static int luv_sig_string_to_num(const char* string);
 static const char* luv_sig_num_to_string(const int num);
+static int luv_proto_string_to_num(const char* string);
+static const char* luv_proto_num_to_string(int num);
 
 /* From util.c */
 // Push a Libuv error code onto the Lua stack
@@ -100,6 +102,10 @@ static int luv_is_callable(lua_State* L, int index);
 
 // Check if the argument is callable and throw an error if it's not
 static void luv_check_callable(lua_State* L, int index);
+
+// Throw an argument error formatted with the type name of the value at the argument's index
+// Example: luv_arg_type_error(L, 1, "expected number or table, got %s");
+static int luv_arg_type_error(lua_State* L, int index, const char* fmt);
 
 static int luv_optboolean(lua_State*L, int idx, int defaultval);
 

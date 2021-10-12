@@ -305,6 +305,10 @@ static int luv_constants(lua_State* L) {
   lua_pushinteger(L, SIGSYS);
   lua_setfield(L, -2, "SIGSYS");
 #endif
+#if LUV_UV_VERSION_GEQ(1, 40, 0)
+  lua_pushinteger(L, UV_UDP_MMSG_FREE);
+  lua_setfield(L, -2, "UDP_MMSG_FREE");
+#endif
 #if LUV_UV_VERSION_GEQ(1, 37, 0)
   lua_pushinteger(L, UV_UDP_RECVMMSG);
   lua_setfield(L, -2, "UDP_RECVMMSG");
@@ -662,4 +666,18 @@ static const char* luv_sig_num_to_string(const int num) {
 #endif
   }
   return NULL;
+}
+
+static int luv_proto_string_to_num(const char* string) {
+  struct protoent* proto;
+  if (!string) return -1;
+  proto = getprotobyname(string);
+  if (!proto) return -1;
+  return proto->p_proto;
+}
+
+static const char* luv_proto_num_to_string(int num) {
+  struct protoent* proto = getprotobynumber(num);
+  if (!proto) return NULL;
+  return proto->p_name;
 }

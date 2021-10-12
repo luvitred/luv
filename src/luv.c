@@ -21,39 +21,40 @@
 #endif
 #include "luv.h"
 
-#include "util.c"
-#include "lhandle.c"
-#include "lreq.c"
-#include "loop.c"
-#include "req.c"
-#include "handle.c"
-#include "timer.c"
-#include "prepare.c"
-#include "check.c"
-#include "idle.c"
 #include "async.c"
-#include "poll.c"
-#include "signal.c"
-#include "process.c"
-#include "stream.c"
-#include "tcp.c"
-#include "pipe.c"
-#include "tty.c"
-#include "udp.c"
+#include "check.c"
+#include "constants.c"
+#include "dns.c"
+#include "fs.c"
 #include "fs_event.c"
 #include "fs_poll.c"
-#include "fs.c"
-#include "dns.c"
-#include "thread.c"
-#include "work.c"
-#include "misc.c"
-#include "constants.c"
+#include "handle.c"
+#include "idle.c"
+#include "lhandle.c"
+#include "loop.c"
+#include "lreq.c"
 #include "metrics.c"
+#include "misc.c"
+#include "pipe.c"
+#include "poll.c"
+#include "prepare.c"
+#include "process.c"
+#include "req.c"
+#include "signal.c"
+#include "stream.c"
+#include "tcp.c"
+#include "thread.c"
+#include "timer.c"
+#include "tty.c"
+#include "udp.c"
+#include "util.c"
+#include "work.c"
 
 static const luaL_Reg luv_functions[] = {
   // loop.c
   {"loop_close", luv_loop_close},
   {"run", luv_run},
+  {"loop_mode", luv_loop_mode},
   {"loop_alive", luv_loop_alive},
   {"stop", luv_stop},
   {"backend_fd", luv_backend_fd},
@@ -92,6 +93,9 @@ static const luaL_Reg luv_functions[] = {
   {"timer_again", luv_timer_again},
   {"timer_set_repeat", luv_timer_set_repeat},
   {"timer_get_repeat", luv_timer_get_repeat},
+#if LUV_UV_VERSION_GEQ(1, 40, 0)
+  {"timer_get_due_in", luv_timer_get_due_in},
+#endif
 
   // prepare.c
   {"new_prepare", luv_new_prepare},
@@ -144,6 +148,9 @@ static const luaL_Reg luv_functions[] = {
   {"write", luv_write},
   {"write2", luv_write2},
   {"try_write", luv_try_write},
+#if LUV_UV_VERSION_GEQ(1, 42, 0)
+  {"try_write2", luv_try_write2},
+#endif
   {"is_readable", luv_is_readable},
   {"is_writable", luv_is_writable},
   {"stream_set_blocking", luv_stream_set_blocking},
@@ -165,6 +172,9 @@ static const luaL_Reg luv_functions[] = {
 #if LUV_UV_VERSION_GEQ(1, 32, 0)
   {"tcp_close_reset", luv_tcp_close_reset},
 #endif
+#if LUV_UV_VERSION_GEQ(1, 41, 0)
+  {"socketpair", luv_socketpair},
+#endif
 
   // pipe.c
   {"new_pipe", luv_new_pipe},
@@ -181,6 +191,9 @@ static const luaL_Reg luv_functions[] = {
   {"pipe_pending_instances", luv_pipe_pending_instances},
   {"pipe_pending_count", luv_pipe_pending_count},
   {"pipe_pending_type", luv_pipe_pending_type},
+#if LUV_UV_VERSION_GEQ(1, 41, 0)
+  {"pipe", luv_pipe},
+#endif
 
   // tty.c
   {"new_tty", luv_new_tty},
@@ -437,6 +450,9 @@ static const luaL_Reg luv_stream_methods[] = {
   {"write", luv_write},
   {"write2", luv_write2},
   {"try_write", luv_try_write},
+#if LUV_UV_VERSION_GEQ(1, 42, 0)
+  {"try_write2", luv_try_write2},
+#endif
   {"is_readable", luv_is_readable},
   {"is_writable", luv_is_writable},
   {"set_blocking", luv_stream_set_blocking},
@@ -505,6 +521,9 @@ static const luaL_Reg luv_timer_methods[] = {
   {"again", luv_timer_again},
   {"set_repeat", luv_timer_set_repeat},
   {"get_repeat", luv_timer_get_repeat},
+#if LUV_UV_VERSION_GEQ(1, 40, 0)
+  {"get_due_in", luv_timer_get_due_in},
+#endif
   {NULL, NULL}
 };
 
@@ -634,6 +653,7 @@ static void luv_req_init(lua_State* L) {
 LUALIB_API int luv_cfpcall(lua_State* L, int nargs, int nresult, int flags) {
   int ret, top, errfunc;
 
+  top  = lua_gettop(L);
   // Get the traceback function in case of error
   if ((flags & (LUVF_CALLBACK_NOTRACEBACK|LUVF_CALLBACK_NOERRMSG) ) == 0)
   {
@@ -644,7 +664,6 @@ LUALIB_API int luv_cfpcall(lua_State* L, int nargs, int nresult, int flags) {
     errfunc -= (nargs+1);
   }else
     errfunc = 0;
-  top  = lua_gettop(L);
 
   ret = lua_pcall(L, nargs, nresult, errfunc);
   switch (ret) {
@@ -716,6 +735,7 @@ LUALIB_API void luv_set_loop(lua_State* L, uv_loop_t* loop) {
 
   ctx->loop = loop;
   ctx->L = L;
+  ctx->mode = -1;
 }
 
 // Set an external event callback routine, before luaopen_luv
@@ -775,6 +795,7 @@ LUALIB_API int luaopen_luv (lua_State* L) {
 
     ctx->loop = loop;
     ctx->L = L;
+    ctx->mode = -1;
 
     ret = uv_loop_init(loop);
     if (ret < 0) {
