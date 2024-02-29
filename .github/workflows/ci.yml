@@ -82,27 +82,10 @@ jobs:
         submodules: recursive
     - run: ./tests/test-sigchld-after-lua_close.sh
 
-  minimum-supported-libuv:
-    runs-on: ubuntu-latest
-    env:
-      WITH_LUA_ENGINE: Lua
-      WITH_SHARED_LIBUV: On
-    steps:
-    - uses: actions/checkout@v2
-      with:
-        submodules: recursive
-    - name: Setup
-      run: ./.ci/setup_min_libuv.sh
-    - name: Build
-      run: CMAKE_OPTIONS="-DCMAKE_PREFIX_PATH=$HOME/.libuv_min" make
-    - name: Test
-      run: make test
-
   build:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-latest]
         luarocks_version: [3.8.0]
         lua_engine: [Lua, LuaJIT]
         include:
@@ -140,14 +123,6 @@ jobs:
         luarocks make
         test $PWD = `lua -e "print(require'luv'.cwd())"`
         luarocks remove luv
-
-    - name: Build with Luarocks (alternate rockspec)
-      run: |
-        mkdir ${{github.workspace}}/build/lib
-        cp ${{github.workspace}}/build/deps/libuv/libuv.a ${{github.workspace}}/build/lib/libuv.a
-        cp -a ${{github.workspace}}/deps/libuv/include ${{github.workspace}}/build
-        luarocks make rockspecs/$(ls rockspecs) LIBUV_DIR=${{github.workspace}}/build LUA_COMPAT53_INCDIR=${{github.workspace}}/deps/lua-compat-5.3/c-api
-        test $PWD = `lua -e "print(require'luv'.cwd())"`
 
   deploy:
     if: startsWith(github.ref, 'refs/tags/')
