@@ -270,9 +270,9 @@ add_custom_command(OUTPUT ${LUAJIT_DIR}/src/luajit_relver.txt
 )
 
 add_custom_command(OUTPUT ${LUAJIT_DIR}/src/luajit.h
-  COMMAND minilua host/genversion.lua
+  COMMAND minilua ${LUAJIT_DIR}/src/host/genversion.lua
   WORKING_DIRECTORY ${LUAJIT_DIR}/src
-  DEPENDS ${LUAJIT_DIR}/src/luajit_rolling.h
+  DEPENDS minilua
   DEPENDS ${LUAJIT_DIR}/src/luajit_relver.txt
 )
 
