@@ -32,7 +32,10 @@ static luv_req_t* luv_setup_req_with_mt(lua_State* L, luv_ctx_t* ctx, int cb_ref
   luaL_checktype(L, -1, LUA_TUSERDATA);
 
   data = (luv_req_t*)malloc(sizeof(*data));
-  if (!data) luaL_error(L, "Problem allocating luv request");
+  if (!data) {
+    luaL_error(L, "failed to allocate");
+    return NULL;
+  }
 
   luaL_getmetatable(L, mt_name);
   lua_setmetatable(L, -2);

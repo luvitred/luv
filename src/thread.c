@@ -90,6 +90,7 @@ static int luv_thread_arg_set(lua_State* L, luv_thread_arg_t* args, int idx, int
       {
         const char* p = lua_tolstring(L, i, &arg->val.str.len);
         arg->val.str.base = malloc(arg->val.str.len);
+        if (!arg->val.str.base) return luaL_error(L, "failed to allocate");
         memcpy((void*)arg->val.str.base, p, arg->val.str.len);
       } else {
         arg->val.str.base = lua_tolstring(L, i, &arg->val.str.len);
@@ -342,9 +343,14 @@ static int luv_new_thread(lua_State* L) {
   luv_thread_dumped(L, cbidx);
   len = lua_rawlen(L, -1);
   code = malloc(len);
+  if (!code) return luaL_error(L, "failed to allocate");
   memcpy(code, lua_tostring(L, -1), len);
 
   thread = (luv_thread_t*)lua_newuserdata(L, sizeof(*thread));
+  if (!thread) {
+    free(code);
+    return luaL_error(L, "failed to allocate");
+  }
   memset(thread, 0, sizeof(*thread));
   luaL_getmetatable(L, "uv_thread");
   lua_setmetatable(L, -2);

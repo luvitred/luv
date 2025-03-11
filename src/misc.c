@@ -57,16 +57,19 @@ static void luv_prep_buf(lua_State *L, int idx, uv_buf_t *pbuf) {
 static uv_buf_t* luv_prep_bufs(lua_State* L, int index, size_t *count, int **refs) {
   uv_buf_t *bufs;
   size_t i;
+  int *refs_array = NULL;
   *count = lua_rawlen(L, index);
   bufs = (uv_buf_t*)malloc(sizeof(uv_buf_t) * *count);
-  int *refs_array = NULL;
-  if (refs)
+  if (!bufs) goto fail;
+  if (refs) {
     refs_array = (int*)malloc(sizeof(int) * (*count + 1));
+    if (!refs_array) goto fail;
+  }
   for (i = 0; i < *count; ++i) {
     lua_rawgeti(L, index, i + 1);
     if (!lua_isstring(L, -1)) {
       luaL_argerror(L, index, lua_pushfstring(L, "expected table of strings, found %s in the table", luaL_typename(L, -1)));
-      return NULL;
+      goto fail;
     }
     luv_prep_buf(L, -1, &bufs[i]);
     if (refs) {
@@ -82,6 +85,10 @@ static uv_buf_t* luv_prep_bufs(lua_State* L, int index, size_t *count, int **ref
     *refs = refs_array;
   }
   return bufs;
+fail:
+  free(bufs);
+  free(refs_array);
+  return NULL;
 }
 
 // Sets up a uv_bufs_t array to pass to write/send libuv functions that take a uv_buf_t*
@@ -99,6 +106,7 @@ static uv_buf_t* luv_check_bufs(lua_State* L, int index, size_t* count, luv_req_
   else if (lua_isstring(L, index)) {
     *count = 1;
     bufs = (uv_buf_t*)malloc(sizeof(uv_buf_t));
+    if (!bufs) return NULL;
     luv_prep_buf(L, index, bufs);
     lua_pushvalue(L, index);
     req_data->data_ref = luaL_ref(L, LUA_REGISTRYINDEX);
@@ -119,6 +127,7 @@ static uv_buf_t* luv_check_bufs_noref(lua_State* L, int index, size_t* count) {
   else if (lua_isstring(L, index)) {
     *count = 1;
     bufs = (uv_buf_t*)malloc(sizeof(uv_buf_t));
+    if (!bufs) return NULL;
     luv_prep_buf(L, index, bufs);
   }
   else {
@@ -738,6 +747,7 @@ static int luv_random(lua_State* L) {
 
     uv_random_t* req = (uv_random_t*)lua_newuserdata(L, uv_req_size(UV_RANDOM));
     req->data = luv_setup_req(L, ctx, cb_ref);
+    if (!req->data) return luaL_error(L, "failed to allocate");
     ((luv_req_t*)req->data)->req_ref = buf_ref;
 
     int ret = uv_random(ctx->loop, req, buf, buflen, flags, luv_random_cb);

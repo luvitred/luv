@@ -299,7 +299,7 @@ static int luv_udp_send(lua_State* L) {
   ref = luv_check_continuation(L, 5);
   req = (uv_udp_send_t*)lua_newuserdata(L, uv_req_size(UV_UDP_SEND));
   req->data = luv_setup_req(L, lhandle->ctx, ref);
-  size_t count;
+  size_t count = 0;
   uv_buf_t* bufs = luv_check_bufs(L, 2, &count, (luv_req_t*)req->data);
   ret = uv_udp_send(req, handle, bufs, count, addr_ptr, luv_udp_send_cb);
   free(bufs);
@@ -317,7 +317,7 @@ static int luv_udp_try_send(lua_State* L) {
   int err_or_num_bytes;
   struct sockaddr_storage addr;
   struct sockaddr* addr_ptr;
-  size_t count;
+  size_t count = 0;
   uv_buf_t* bufs = luv_check_bufs_noref(L, 2, &count);
   addr_ptr = luv_check_addr(L, &addr, 3, 4);
   err_or_num_bytes = uv_udp_try_send(handle, bufs, count, addr_ptr);

@@ -82,6 +82,7 @@ static void luv_connection_cb(uv_stream_t* handle, int status) {
 
 static int luv_listen(lua_State* L) {
   uv_stream_t* handle = luv_check_stream(L, 1);
+  if (!handle) return luaL_error(L, "failed to allocate");
   int backlog = luaL_checkinteger(L, 2);
   int ret;
   luv_check_callback(L, (luv_handle_t*)handle->data, LUV_CONNECTION, 3);
@@ -130,6 +131,7 @@ static void luv_read_cb(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
 
 static int luv_read_start(lua_State* L) {
   uv_stream_t* handle = luv_check_stream(L, 1);
+  if (!handle) return luaL_error(L, "failed to allocate");
   int ret;
   luv_check_callback(L, (luv_handle_t*)handle->data, LUV_READ, 2);
   ret = uv_read_start(handle, luv_alloc_cb, luv_read_cb);
@@ -159,7 +161,7 @@ static int luv_write(lua_State* L) {
   ref = luv_check_continuation(L, 3);
   req = (uv_write_t *)lua_newuserdata(L, uv_req_size(UV_WRITE));
   req->data = (luv_req_t*)luv_setup_req(L, ctx, ref);
-  size_t count;
+  size_t count = 0;
   uv_buf_t* bufs = luv_check_bufs(L, 2, &count, (luv_req_t*)req->data);
   ret = uv_write(req, handle, bufs, count, luv_write_cb);
   free(bufs);
@@ -181,7 +183,7 @@ static int luv_write2(lua_State* L) {
   ref = luv_check_continuation(L, 4);
   req = (uv_write_t *)lua_newuserdata(L, uv_req_size(UV_WRITE));
   req->data = luv_setup_req(L, ctx, ref);
-  size_t count;
+  size_t count = 0;
   uv_buf_t* bufs = luv_check_bufs(L, 2, &count, (luv_req_t*)req->data);
   ret = uv_write2(req, handle, bufs, count, send_handle, luv_write_cb);
   free(bufs);

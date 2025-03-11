@@ -63,6 +63,7 @@ static uv_handle_t* luv_check_handle(lua_State* L, int index) {
 // Show the libuv type instead of generic "userdata"
 static int luv_handle_tostring(lua_State* L) {
   uv_handle_t* handle = luv_check_handle(L, 1);
+  if (!handle) return 0;
   switch (handle->type) {
 #define XX(uc, lc) case UV_##uc: lua_pushfstring(L, "uv_"#lc"_t: %p", handle); break;
   UV_HANDLE_TYPE_MAP(XX)
@@ -105,6 +106,7 @@ static void luv_close_cb(uv_handle_t* handle) {
 
 static int luv_close(lua_State* L) {
   uv_handle_t* handle = luv_check_handle(L, 1);
+  if (!handle) return 0;
   if (uv_is_closing(handle)) {
     luaL_error(L, "handle %p is already closing", handle);
   }

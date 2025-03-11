@@ -29,7 +29,10 @@ static luv_handle_t* luv_setup_handle(lua_State* L, luv_ctx_t* ctx) {
   luaL_checktype(L, -1, LUA_TUSERDATA);
 
   data = (luv_handle_t*)malloc(sizeof(*data));
-  if (!data) luaL_error(L, "Can't allocate luv handle");
+  if (!data) {
+    luaL_error(L, "failed to allocate");
+    return NULL;
+  }
 
   #define XX(uc, lc) case UV_##uc: \
     luaL_getmetatable(L, "uv_"#lc); \

@@ -115,7 +115,7 @@ static int luv_spawn(lua_State* L) {
   // collected between now and when they are used in uv_spawn.
   // However, we don't need to ref args[0] since we don't pop that
   // from the stack. Note: args_refs is a LUA_NOREF-terminated array
-  // when it is non-NULL 
+  // when it is non-NULL
   if (len > 1) {
     args_refs = (int*)malloc(len * sizeof(int));
     if (args_refs)
@@ -278,6 +278,7 @@ static int luv_spawn(lua_State* L) {
   lua_settop(L, 3);
 
   handle = (uv_process_t*)luv_newuserdata(L, uv_handle_size(UV_PROCESS));
+  if (!handle) return luaL_error(L, "failed to allocate");
   handle->type = UV_PROCESS;
   handle->data = luv_setup_handle(L, ctx);
 

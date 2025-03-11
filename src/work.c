@@ -189,6 +189,7 @@ static int luv_new_work(lua_State* L) {
   luv_thread_dumped(L, 1);
   len = lua_rawlen(L, -1);
   code = malloc(len);
+  if (!code) return luaL_error(L, "failed to allocate");
   memcpy(code, lua_tostring(L, -1), len);
   lua_pop(L, 1);
 
@@ -214,6 +215,7 @@ static int luv_queue_work(lua_State* L) {
   int top = lua_gettop(L);
   luv_work_ctx_t* ctx = luv_check_work_ctx(L, 1);
   luv_work_t* work = (luv_work_t*)malloc(sizeof(*work));
+  if (!work) return luaL_error(L, "failed to allocate");
   int ret;
 
   memset(work, 0, sizeof(*work));
